@@ -1,6 +1,3 @@
-# Reads the sa folder wiht dicom files and contours
-# then draws the contours on the images.
-
 from con_reader import CONreaderVM
 from dicom_reader import DCMreaderVM
 from con2img import draw_contourmtcs2image as draw
@@ -12,49 +9,74 @@ import numpy as np
 class PatientData:
     def __init__(self, data_dir, patient_id):
 
-        folder_types = ["la", "lale", "sa", "sale", "tra"]
-        self.images = {}
-        
-        for mode in folder_types:
-            self.images[mode] = []
+        self.data_dir = data_dir
+        self.patient_id = patient_id
 
-            if mode != "sa":
-                image_folder = data_dir + "/" + patient_id + "/" + mode
+        self.images_la = []
+        self.images_lale = []
+        self.images_sa = []
+        self.images_sale = []
+        self.images_tra = []
 
-                # reading the dicom files
-                dr = DCMreaderVM(image_folder)
-                self.images[mode] = dr.dcm_images
+        self.load_la()
+        self.load_lale()
+        self.load_sa()
+        self.load_sale()
+        self.load_tra()
 
-            else:
-                image_folder = data_dir + "/" + patient_id + "/sa/images"
-                con_file = data_dir + "/" + patient_id + "/sa/contours.con"
+    def load_la(self):
+        image_folder = self.data_dir + "/" + self.patient_id + "/la"
 
-                # reading the contours
-                cr = CONreaderVM(con_file)
-                contours = cr.get_hierarchical_contours()
-                self.contours = []
+        # reading the dicom files
+        dr = DCMreaderVM(image_folder)
+        self.images_la = dr.dcm_images
 
-                for slice in contours:
-                    maxFrame = None
-                    maxArea = 0
-                    for frame in contours[slice]:
-                        for mode2 in contours[slice][frame]:
-                            if mode2 == 'ln': # vörös
-                                rgb = [1, 0, 0]
-                                area = polygonArea(contours[slice][frame][mode2])
-                                if (area > maxArea):
-                                    maxFrame = frame
-                                    maxArea = area
-                            elif mode2 == 'lp': # zöld
-                                rgb = [0, 1, 0]
-                            else:
-                                rgb = None
-                            if rgb is not None:
-                                self.contours.append(contours[slice][frame][mode2])
-                    
-                    # reading the dicom files
-                    dr = DCMreaderVM(image_folder)
-                    self.images[mode].append(dr.get_image(slice, maxFrame))
+    def load_lale(self):
+        image_folder = self.data_dir + "/" + self.patient_id + "/lale"
+
+        # reading the dicom files
+        dr = DCMreaderVM(image_folder)
+        self.images_lale = dr.dcm_images
+
+    def load_sa(self):
+        image_folder = data_dir + "/" + self.patient_id + "/sa/images"
+        con_file = data_dir + "/" + self.patient_id + "/sa/contours.con"
+
+        # reading the contours
+        cr = CONreaderVM(con_file)
+        contours = cr.get_hierarchical_contours()
+        self.contours = []
+
+        for slice in contours:
+            maxFrame = None
+            maxArea = 0
+            for frame in contours[slice]:
+                for mode in contours[slice][frame]:
+                    if mode == 'ln': # vörös
+                        area = polygonArea(contours[slice][frame][mode])
+                        if (area > maxArea):
+                            maxFrame = frame
+                            maxArea = area
+                    if mode is not 'ln' or mode is not 'lp':
+                        self.contours.append(contours[slice][frame][mode])
+                
+        # reading the dicom files
+        dr = DCMreaderVM(image_folder)
+        self.images_sa.append(dr.get_image(slice, maxFrame))
+
+    def load_sale(self):
+        image_folder = self.data_dir + "/" + self.patient_id + "/sale"
+
+        # reading the dicom files
+        dr = DCMreaderVM(image_folder)
+        self.images_sale = dr.dcm_images
+
+    def load_tra(self):
+        image_folder = self.data_dir + "/" + self.patient_id + "/tra"
+
+        # reading the dicom files
+        dr = DCMreaderVM(image_folder)
+        self.images_tra = dr.dcm_images
                             
 
 def polygonArea(pointArray):

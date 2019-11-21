@@ -4,14 +4,22 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
-from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
-from torch.optim import Adam, SGD
+import torch.optim as optim # Adam, SGD
+from torchvision import datasets, models, transforms
 
-from skimage.io import imread
+vgg = models.vgg.vgg11_bn(num_classes=3)
+print(vgg)
+
+resnet = models.resnet.resnet18(num_classes=3)
+print(resnet)
+
+squeezenet = models.squeezenet.squeezenet1_0(num_classes=3)
+print(squeezenet)
+
+'''from skimage.io import imread
 import matplotlib.pyplot as plt
 #from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_scores
 #from tqdm import tqdm
 
 # loading dataset
@@ -24,7 +32,7 @@ train.head()
 
 # loading training images
 train_img = []
-for img_name in tqdm(train['id']):
+for img_name in train['id']:
     # defining the image path
     image_path = 'train_LbELtWX/train/' + str(img_name) + '.png'
     # reading the image
@@ -260,4 +268,4 @@ sample_submission['label'] = predictions
 sample_submission.head()
 
 # saving the file
-sample_submission.to_csv('submission.csv', index=False)
+sample_submission.to_csv('submission.csv', index=False)'''

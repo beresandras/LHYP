@@ -39,6 +39,7 @@ class PatientData:
         self.images_la = []
         self.images_lale = []
 
+    def load_all(self):
         self.load_sa()
         self.load_sale()
         self.load_la()
@@ -111,17 +112,19 @@ def polygonArea(pointArray):
     y = np.transpose(pointArray)[1]
     return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
-data_dir = "../data"
-pickle_dir = "../bindata"
+if __name__=='__main__':
+    data_dir = "../data"
+    pickle_dir = "../bindata"
 
-patient_ids = [subdir for subdir in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, subdir))]
+    patient_ids = [subdir for subdir in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, subdir))]
 
-for pid in patient_ids:
-    print(pid)
-    patient_data = PatientData(data_dir, pid)
+    for pid in patient_ids:
+        print(pid)
+        patient_data = PatientData(data_dir, pid)
+        patient_data.load_all()
 
-    outfile = open(pickle_dir + "/"+ pid, "wb")
-    pickle.dump(patient_data, outfile)
-    outfile.close()
+        outfile = open(pickle_dir + "/"+ pid, "wb")
+        pickle.dump(patient_data, outfile)
+        outfile.close()
 
 

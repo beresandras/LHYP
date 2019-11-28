@@ -58,6 +58,6 @@ class DicomFilter:
         return pd.DataFrame(data=self.data)
 
 if __name__=='__main__':
-    dicomFilter = DicomFilter(["../data/10635813AMR806/"], recursive=True)
+    dicomFilter = DicomFilter(["../data/10635813AMR806/lale"], keepAttributes=[], recursive=True)
     dataFrame = dicomFilter.getDataFrame()
     dataFrame.to_csv("out.csv", sep="\t")

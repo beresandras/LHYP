@@ -13,14 +13,16 @@ mpl.rcParams['image.cmap'] = 'Greys'
 mpl.rcParams['image.interpolation'] = 'nearest'
 mpl.rcParams['figure.figsize'] = 8, 6
 
-def loadDicom(folder_name):
+def loadDicomGeneric(folder_name):
     images = []
     sliceLocations = []
+    acquisitionNumbers = []
+    instanceNumbers = []
 
-    dcm_files = os.listdir(folder_name)
+    dcm_files = sorted(os.listdir(folder_name))
     dcm_files = [d for d in dcm_files if len(d.split('.')[-2]) < 4]
     if len(dcm_files) == 0:  # sometimes the order number is missing at the end
-        dcm_files = os.listdir(folder_name)
+        dcm_files = sorted(os.listdir(folder_name))
 
     for file in dcm_files:
         if file.find('.dcm') != -1:
@@ -28,9 +30,14 @@ def loadDicom(folder_name):
                 temp_ds = pydicom.dcmread(os.path.join(folder_name, file))
                 images.append(temp_ds.pixel_array)
                 sliceLocations.append(int(temp_ds.SliceLocation))
+                acquisitionNumbers.append(int(temp_ds.AcquisitionNumber))
+                instanceNumbers.append(int(temp_ds.InstanceNumber))
             except Exception as e:
                 #print(e)
                 pass
+
+    images = [img for img, acqNum, instNum in sorted(zip(images, acquisitionNumbers, instanceNumbers), key=lambda elem: elem[1] * (max(instanceNumbers) + 1) + elem[2])]
+    sliceLocations = [sliceLoc for sliceLoc, acqNum, instNum in sorted(zip(sliceLocations, acquisitionNumbers, instanceNumbers), key=lambda elem: elem[1] * (max(instanceNumbers) + 1) + elem[2])]
             
     return (images, sliceLocations)
 
@@ -42,17 +49,21 @@ class PatientData:
 
         self.images_sa = []
         self.images_sale = []
-        self.images_la = []
+        self.images_la_2C = []
+        self.images_la_4C = []
+        self.images_la_3C = []
         self.images_lale = []
 
         self.contours_sa = []
+        self.meta_str = ""
 
     def load_all(self):
         print("\n" + self.patient_id)
         self.load_sa()
-        #self.load_sale()
-        #self.load_la()
-        #self.load_lale()
+        self.load_sale()
+        self.load_la()
+        self.load_lale()
+        self.load_meta()
 
     def load_sa(self):
         image_folder = data_dir + "/" + self.patient_id + "/sa/images"
@@ -98,35 +109,67 @@ class PatientData:
         if len(os.listdir(image_folder)) == 0:
             print("Image folder is empty")
         else:
-            (images, sliceLocations) = loadDicom(image_folder)
-            nullLocations = [i for i, sl in enumerate(sliceLocations) if sl == 0]
-            if len(nullLocations) == 1:
-                self.images_sale = images
-            elif len(nullLocations) > 1:
-                self.images_sale = images[:nullLocations[1]]
-            print("OK")
+            (images, sliceLocations) = loadDicomGeneric(image_folder)
+            if len(images) == 0:
+                print("No image could be loaded successfully")
+            else:
+                nullLocations = [i for i, sl in enumerate(sliceLocations) if sl == 0]
+                if len(nullLocations) <= 1:
+                    self.images_sale = images
+                elif len(nullLocations) > 1:
+                    self.images_sale = images[:nullLocations[1]]
+                print("{} images added".format(len(self.images_sale)))
 
     def load_la(self):
         image_folder = self.data_dir + "/" + self.patient_id + "/la"
 
+        print(" LA: ", end="")
+
         # reading the dicom files
-        if len(os.listdir(image_folder)) > 0:
-            (images, sliceLocations) = loadDicom(image_folder)
-            if (len(images) != 0):
-                self.images_la = images[0]
+        if len(os.listdir(image_folder)) == 0:
+            print("Image folder is empty")
+        else:
+            (images, sliceLocations) = loadDicomGeneric(image_folder)
+            if len(images) == 0:
+                print("No image could be loaded successfully")
+            else:
+                endDiastoleLocations = [[] for i in range(3)] # 2C, 4C, 3C
+                prevSl = None
+                currentChamberIndex = 0
+                for i, sl in enumerate(sliceLocations):
+                    if sl != prevSl:
+                        endDiastoleLocations[currentChamberIndex].append(i)
+                        currentChamberIndex = (currentChamberIndex + 1) % 3
+                    prevSl = sl
+                if not (len(endDiastoleLocations[0]) == len(endDiastoleLocations[1]) and len(endDiastoleLocations[1]) == len(endDiastoleLocations[2])):
+                    print("LA image distribution is not standard (2C-4C-3C)")
+                else:
+                    for i in endDiastoleLocations[0]:
+                        self.images_la_2C.append(images[i])
+                        self.images_la_4C.append(images[i])
+                        self.images_la_3C.append(images[i])
+                    print("{} + {} + {} images added".format(len(self.images_la_2C), len(self.images_la_4C), len(self.images_la_3C)))
 
     def load_lale(self):
         image_folder = self.data_dir + "/" + self.patient_id + "/lale"
 
+        print(" LALE: ", end="")
+
         # reading the dicom files
-        if len(os.listdir(image_folder)) > 0:
-            (images, sliceLocations) = loadDicom(image_folder)
-            nullLocations = [i for i, sl in enumerate(sliceLocations) if sl == 0]
-            if len(nullLocations) == 1:
-                self.images_lale = images[nullLocations[1]:]
-            elif len(nullLocations) > 2:
-                self.images_lale = images[nullLocations[1]:nullLocations[2]]
-                            
+        if len(os.listdir(image_folder)) == 0:
+            print("Image folder is empty")
+        else:
+            (images, sliceLocations) = loadDicomGeneric(image_folder)
+            if len(images) == 0:
+                print("No image could be loaded successfully")
+            else:
+                self.images_lale = images[(len(images) // 3) : (2 * len(images) // 3)]
+                print("{} images added".format(len(self.images_lale)))
+
+    def load_meta(self):
+        meta_path = self.data_dir + "/" + self.patient_id + "/meta.txt"
+        with open(meta_path, 'r') as meta_file:
+            self.meta_str = meta_file.read()
 
 def polygonArea(pointArray):
     x = np.transpose(pointArray)[0]

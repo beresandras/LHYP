@@ -6,6 +6,12 @@ import os
 import pickle
 import numpy as np
 import pydicom
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+mpl.rcParams['image.cmap'] = 'Greys'
+mpl.rcParams['image.interpolation'] = 'nearest'
+mpl.rcParams['figure.figsize'] = 8, 6
 
 def loadDicom(folder_name):
     images = []
@@ -39,11 +45,66 @@ class PatientData:
         self.images_la = []
         self.images_lale = []
 
+        self.contours_sa = []
+
     def load_all(self):
+        print("\n" + self.patient_id)
         self.load_sa()
-        self.load_sale()
-        self.load_la()
-        self.load_lale()
+        #self.load_sale()
+        #self.load_la()
+        #self.load_lale()
+
+    def load_sa(self):
+        image_folder = data_dir + "/" + self.patient_id + "/sa/images"
+        contour_file = data_dir + "/" + self.patient_id + "/sa/contours.con"
+
+        print(" SA: ", end="")
+
+        # reading the contours
+        if (os.path.isfile(contour_file) == False):
+            print("Contour file does not exist")
+            return
+        cr = CONreaderVM(contour_file)
+        contours = cr.get_hierarchical_contours()
+                
+        # reading the dicom files
+        if len(os.listdir(image_folder)) == 0:
+            print("Image folder is empty")
+        else:
+            dr = DCMreaderVM(image_folder)
+            if (dr.broken):
+                print("Dicom reader unsuccessful")
+            else:
+                for slice in contours:
+                    maxFrame = None
+                    maxArea = 0
+                    for frame in contours[slice]:
+                        if "ln" in contours[slice][frame]: # ha van vörös kontúr
+                            area = polygonArea(contours[slice][frame]["ln"])
+                            if (area > maxArea):
+                                maxFrame = frame
+                                maxArea = area
+                    if maxFrame is not None:
+                        self.images_sa.append(dr.get_image(slice, maxFrame))
+                        self.contours_sa.append(contours[slice][maxFrame]["ln"])
+                print("{} images and contours added".format(len(self.images_sa)))
+
+    def load_sale(self):
+        image_folder = self.data_dir + "/" + self.patient_id + "/sale"
+        
+        print(" SALE: ", end="")
+
+        # reading the dicom files
+        if len(os.listdir(image_folder)) == 0:
+            print("Image folder is empty")
+        else:
+            (images, sliceLocations) = loadDicom(image_folder)
+            nullLocations = [i for i, sl in enumerate(sliceLocations) if sl == 0]
+            if len(nullLocations) == 1:
+                self.images_sale = images
+            elif len(nullLocations) > 1:
+                self.images_sale = images[:nullLocations[1]]
+            print("OK")
 
     def load_la(self):
         image_folder = self.data_dir + "/" + self.patient_id + "/la"
@@ -65,46 +126,6 @@ class PatientData:
                 self.images_lale = images[nullLocations[1]:]
             elif len(nullLocations) > 2:
                 self.images_lale = images[nullLocations[1]:nullLocations[2]]
-
-    def load_sa(self):
-        image_folder = data_dir + "/" + self.patient_id + "/sa/images"
-        con_file = data_dir + "/" + self.patient_id + "/sa/contours.con"
-
-        # reading the contours
-        if (os.path.isfile(con_file) == False):
-            return
-        cr = CONreaderVM(con_file)
-        contours = cr.get_hierarchical_contours()
-        self.contours = []
-
-        for slice in contours:
-            maxFrame = None
-            maxArea = 0
-            for frame in contours[slice]:
-                for mode in contours[slice][frame]:
-                    if mode == 'ln': # vörös
-                        area = polygonArea(contours[slice][frame][mode])
-                        if (area > maxArea):
-                            maxFrame = frame
-                            maxArea = area
-                
-        # reading the dicom files
-        if len(os.listdir(image_folder)) > 0:
-            dr = DCMreaderVM(image_folder)
-            if (dr.broken != True):
-                self.images_sa.append(dr.get_image(slice, maxFrame))
-
-    def load_sale(self):
-        image_folder = self.data_dir + "/" + self.patient_id + "/sale"
-
-        # reading the dicom files
-        if len(os.listdir(image_folder)) > 0:
-            (images, sliceLocations) = loadDicom(image_folder)
-            nullLocations = [i for i, sl in enumerate(sliceLocations) if sl == 0]
-            if len(nullLocations) == 1:
-                self.images_sale = images
-            elif len(nullLocations) > 1:
-                self.images_sale = images[:nullLocations[1]]
                             
 
 def polygonArea(pointArray):
@@ -119,7 +140,6 @@ if __name__=='__main__':
     patient_ids = [subdir for subdir in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, subdir))]
 
     for pid in patient_ids:
-        print(pid)
         patient_data = PatientData(data_dir, pid)
         patient_data.load_all()
 

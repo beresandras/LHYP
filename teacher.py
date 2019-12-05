@@ -8,13 +8,13 @@ import torch.optim as optim # Adam, SGD
 from torchvision import datasets, models, transforms
 
 vgg = models.vgg.vgg11_bn(num_classes=3)
-print(vgg)
+print(sum(p.numel() for p in vgg.parameters()))
 
 resnet = models.resnet.resnet18(num_classes=3)
-print(resnet)
+print(sum(p.numel() for p in resnet.parameters()))
 
 squeezenet = models.squeezenet.squeezenet1_0(num_classes=3)
-print(squeezenet)
+print(sum(p.numel() for p in squeezenet.parameters()))
 
 '''from skimage.io import imread
 import matplotlib.pyplot as plt

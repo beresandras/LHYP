@@ -4,6 +4,7 @@ import numpy as np
 import PIL
 import pickle
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -43,8 +44,9 @@ class Pathology(Enum):
     FABRY         = 9
 
 class DatasetParameters:
-    def __init__(self, data_dir, expected_pathologies):
+    def __init__(self, data_dir, results_dir, expected_pathologies):
         self.data_dir = data_dir
+        self.results_dir = results_dir
         self.patient_ids = [pid for pid in sorted(os.listdir(data_dir)) if pid[0] is not '_']
         if len(self.patient_ids) == 0:
             print('Error: no data found in folder {}'.format(data_dir))
@@ -78,14 +80,14 @@ class DatasetParameters:
     def pathology_from_meta_str(self, meta_str):
         for line in meta_str.splitlines():
             if line.startswith('Pathology'):
-                pathology_str = line[11:].strip()
+                pathology_str = line[11:].strip().upper()
                 if pathology_str == 'NORM':
                     pathology_str = 'NORMAL'
                 return Pathology[pathology_str]
         return Pathology['UNDEFINED']
 
     def analyze_data(self):
-        for pid in self.patient_ids:
+        for pid in tqdm(self.patient_ids):
             with open(os.path.join(self.data_dir, pid), 'rb') as input_file:
                 try:
                     loaded_data = pickle.load(input_file)
@@ -135,7 +137,7 @@ class DatasetParameters:
         np.random.shuffle(self.shuffled_indices_lale)
 
     def save_object(self):
-        with open(self.data_dir + '/_dataset_params', 'wb') as outfile:
+        with open(self.results_dir + '/_dataset_params.pickle', 'wb') as outfile:
             pickle.dump(self, outfile)
 
 class GenericHypertrophyDataset(Dataset):
@@ -144,6 +146,7 @@ class GenericHypertrophyDataset(Dataset):
         self.dataset_mode = dataset_mode
         self.medical_mode = medical_mode
         self.data_dir = dataset_params.data_dir
+        self.results_dir = dataset_params.results_dir
         self.augmenter = augmenter
 
         if self.medical_mode == MedicalMode['SA']:
@@ -214,17 +217,25 @@ class GenericHypertrophyDataset(Dataset):
         return self.length
 
 if __name__=='__main__':
-    data_dir = './data/beres'
-    force_analyzis = True
+
+    data_dir = '../data/beres'
+    results_dir = '../results'
+    models_dir = '../models'
+    force_analyzis = False
+
+    model_save_frequency = 5
+    model_path = models_dir + '/resnet18_{}_{}.pth'
+    show_image = False
 
     if not torch.cuda.is_available():
         print('CUDA is not available')
         exit()
-    device = torch.device("cuda")
+    device = torch.device(1)
 
     seed = 12
     np.random.seed(seed)
     torch.manual_seed(seed)
+    torch.cuda.seed_all()
 
     pathology_to_label = {
         Pathology['NORMAL']: 0,
@@ -236,19 +247,19 @@ if __name__=='__main__':
         Pathology['FABRY']: 2
     }
 
-    if (force_analyzis != True and os.path.isfile(data_dir + '/_dataset_params')):
-        with open(data_dir + '/_dataset_params', 'rb') as param_file:
+    if (force_analyzis != True and os.path.isfile(results_dir + '/_dataset_params.pickle')):
+        with open(results_dir + '/_dataset_params.pickle', 'rb') as param_file:
             dataset_params = pickle.load(param_file)
     else:
-        dataset_params = DatasetParameters(data_dir, pathology_to_label)
+        dataset_params = DatasetParameters(data_dir, results_dir, pathology_to_label)
         dataset_params.analyze_data()
         dataset_params.save_object()
 
-    print('Number of all patients: {}'.format(len(dataset_params.patient_ids)))
-    print('Number of SA images: {}, patients: {}'.format(len(dataset_params.patient_ids_sa), len(set(dataset_params.patient_ids_sa))))
-    print('Number of SALE images: {}, patients: {}'.format(len(dataset_params.patient_ids_sale), len(set(dataset_params.patient_ids_sale))))
-    print('Number of LA images: {}, patients: {}'.format(len(dataset_params.patient_ids_la), len(set(dataset_params.patient_ids_la))))
-    print('Number of LALE images: {}, patients: {}'.format(len(dataset_params.patient_ids_lale), len(set(dataset_params.patient_ids_lale))))
+    tqdm.write('Number of all patients: {}'.format(len(dataset_params.patient_ids)))
+    tqdm.write('Number of SA images: {}, patients: {}'.format(len(dataset_params.patient_ids_sa), len(set(dataset_params.patient_ids_sa))))
+    tqdm.write('Number of SALE images: {}, patients: {}'.format(len(dataset_params.patient_ids_sale), len(set(dataset_params.patient_ids_sale))))
+    tqdm.write('Number of LA images: {}, patients: {}'.format(len(dataset_params.patient_ids_la), len(set(dataset_params.patient_ids_la))))
+    tqdm.write('Number of LALE images: {}, patients: {}'.format(len(dataset_params.patient_ids_lale), len(set(dataset_params.patient_ids_lale))))
 
     dataset_split = {
         DatasetMode['TRAIN']: [0.0, 0.7],
@@ -258,7 +269,7 @@ if __name__=='__main__':
 
     medical_mode_str = 'SALE'
     medical_mode = MedicalMode[medical_mode_str]
-    epochs = 2
+    epochs = 20
     batch_size = 16
 
     model = models.resnet.resnet18(num_classes=3) #models.vgg.vgg11_bn(num_classes=3)
@@ -290,7 +301,7 @@ if __name__=='__main__':
 
     validation_loader = DataLoader(
         GenericHypertrophyDataset(
-            DatasetMode['VALIDATION'],
+            DatasetMode['TRAIN'],
             dataset_split,
             medical_mode,
             dataset_params,
@@ -307,7 +318,7 @@ if __name__=='__main__':
 
     test_loader = DataLoader(
         GenericHypertrophyDataset(
-            DatasetMode['TEST'],
+            DatasetMode['TRAIN'],
             dataset_split,
             medical_mode,
             dataset_params,
@@ -322,15 +333,11 @@ if __name__=='__main__':
         batch_size=batch_size
     )
 
-    model_save_frequency = 5
-    model_path = '../models/resnet18_{}_{}.pth'
-    show_image = False
-
-    print('Training on {}'.format(medical_mode_str))
+    tqdm.write('Training on {} for {} epochs'.format(medical_mode_str, epochs))
     for epoch in range(epochs):
         avg_train_loss = 0.0
         avg_train_acc = 0
-        for batch_index, data_batch in enumerate(train_loader):
+        for batch_index, data_batch in tqdm(enumerate(train_loader), total=len(train_loader)):
             image_batch, label_batch = data_batch
             image_batch = image_batch.to(device)
             label_batch = label_batch.to(device)
@@ -347,8 +354,6 @@ if __name__=='__main__':
             avg_train_loss += loss.item()
             avg_train_acc += torch.sum(predictions == label_batch)
 
-            if ((batch_index + 1) % 10 == 0):
-                print(batch_index, end=', ')
             if (show_image):
                 plt.imshow(image_batch[0][0].numpy(), cmap='gray')
                 plt.show()
@@ -374,16 +379,15 @@ if __name__=='__main__':
         avg_train_acc = float(avg_train_acc) / (len(train_loader) * batch_size)
         avg_validation_acc = float(avg_validation_acc) / (len(validation_loader) * batch_size)
 
-        print()
-        print("epoch: {}, train_loss: {:.3f}, train_acc: {:.3f}, val_loss: {:.3f}, val_acc: {:.3f}"\
+        tqdm.write("epoch: {}, train_loss: {:.3f}, train_acc: {:.3f}, val_loss: {:.3f}, val_acc: {:.3f}"\
                 .format(epoch, avg_train_loss, avg_train_acc, avg_validation_loss, avg_validation_acc))
 
         if (epoch + 1) % model_save_frequency == 0:
             torch.save(model.state_dict(), model_path.format(medical_mode_str, epoch))
-            print('Model saved at epoch {}'.format(epoch))
+            tqdm.write('Model saved at epoch {}'.format(epoch))
     if (epoch + 1) % model_save_frequency != 0:
         torch.save(model.state_dict(), model_path.format(medical_mode_str, epoch))
-        print('Model saved at epoch {}'.format(epoch))
+        tqdm.write('Model saved at epoch {}'.format(epoch))
     
     load_epoch = input('Load model from epoch: ')
     test_model.load_state_dict(torch.load(model_path.format(medical_mode_str, load_epoch)))
@@ -404,4 +408,4 @@ if __name__=='__main__':
         avg_test_acc += torch.sum(predictions == label_batch)
     avg_test_loss /= len(test_loader)
     avg_test_acc = float(avg_test_acc) / (len(test_loader) * batch_size)
-    print("test_loss: {:.3f}, test_acc: {:.3f}".format(avg_test_loss, avg_test_acc))
+    tqdm.write("test_loss: {:.3f}, test_acc: {:.3f}".format(avg_test_loss, avg_test_acc))

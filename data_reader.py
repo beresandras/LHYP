@@ -6,12 +6,7 @@ import os
 import pickle
 import numpy as np
 import pydicom
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-mpl.rcParams['image.cmap'] = 'Greys'
-mpl.rcParams['image.interpolation'] = 'nearest'
-mpl.rcParams['figure.figsize'] = 8, 6
 
 def loadDicomGeneric(folder_name):
     images = []

@@ -1,8 +1,8 @@
 # Balkamrai hypertrófia
 ## Amit érdemes tudni
-*Alábbi gyűjtéssel a célom, hogy a területen nem jártas új diákoknak gyors összefoglalót adjak a témával kapcsolatos szakkifejezések jelentéséről, hogy ezáltal is könnyebben fel tudják venni a tempót.
+*Alábbi gyűjtéssel a célom, hogy a területen nem jártas új diákoknak gyors összefoglalót adjak a témával kapcsolatos szakkifejezések jelentéséről, hogy ezáltal is könnyebben fel tudják venni a tempót.*
 
-Az esetleges pontatlanságokért elnézést kérek.*
+*Az esetleges pontatlanságokért elnézést kérek.*
 
 **Balkamrai hypertrófia** *(angol: left ventricular hypertrophy, LVH)*: a bal szívkamra falának kóros megnagyobbodása. Ennek során a szívizomsejtek mérete megnő, de a számuk nem változik, mellyel az ellátó erek nem tudnak lépést tartani, így a szív vérellátása romlik. Oka általában az, hogy a szívnek nagyobb ellenállás (pl. magas vérnyomás esetén) ellen kell dolgoznia. Következményei a szívelégtelenség és a szívinfarktus megnövekedett kockázata.
 
@@ -56,7 +56,7 @@ Teszteltem a fent leírt modellt az összes lehetséges MRI típuson. A grafikon
 ![A különböző MRI típusok eredményei](https://drive.google.com/uc?id=1J_I68Emaovwy_hPA4spbtwKia4eONsXK)
 
 ### Tesztelt architektúrák eredményei
-4 különböző modellen végeztem tanítást: VGG11 (batch norm), MobileNet v2, ResNet18, SqueezeNet 1.0. A modellek kiválasztásakor ügyeltem arra, hogy minél kevesebb paramétert tartalmazzanak, hiszen viszonylag kevés adatunk van, és ügyelni kell arra, hogy a túltanítást elkerüljük. Az eredmények alapján elmondható, hogy általánosságban a VGG modell vezetett a legnagyobb pontossághoz, azonban ha a tanítás idejét is figyelembe vesszük, a ResNet mindkét téren jól teljesített, és egy jó kompromisszumnak tűnik a tanítási idő és pontosság között.
+4 különböző modellen végeztem tanítást: *VGG11 (batch norm), MobileNet v2, ResNet18, SqueezeNet 1.0*. A modellek kiválasztásakor ügyeltem arra, hogy minél kevesebb paramétert tartalmazzanak, hiszen viszonylag kevés adatunk van, és ügyelni kell arra, hogy a túltanítást elkerüljük. Az eredmények alapján elmondható, hogy általánosságban a *VGG* modell vezetett a legnagyobb pontossághoz, azonban ha a tanítás idejét is figyelembe vesszük, a *ResNet* mindkét téren jól teljesített, és egy jó kompromisszumnak tűnik a tanítási idő és pontosság között.
 
 ![Tesztelt architektúrák eredményei](https://drive.google.com/uc?id=1PH1IXDVlzogiw6ux3fsFJiQrRe6SQdpR)
 
@@ -86,7 +86,7 @@ A *transfer* technika kezdettől fogva nem vezetett nagy pontosságra, ami az Im
 ![Transzfer tanítás hatása](https://drive.google.com/uc?id=1S0lVBqgr3I_aTN2-XE7Xg9BdzVn-fd0Q)
 
 ### Igazságmátrix 2, 3, 4 diagnózis-típus esetén
-Végezetül pedig ábrázoltam a különböző osztály-felosztások esetén létrejött igazságmátrixokat. Ezek optimális esetben egységmátrixok lennének (valamilyen skálázással). Azt láthatjuk, hogy mindhárom esetben jó pontosságot ért el a modell, nem látszanak kiugró egyensúlytalanságok. Külön kiemelném, hogy a 4 osztály esetében a modell milyen pontossággal különbözteti meg a sportolók, HCM-esek és egyéb hypertrófiások képeit, annak ellenére, hogy mindhárom osztály esetében a szív megvastagszik, tehát pusztán erre nem hagyatkozhat.
+Végezetül pedig ábrázoltam a különböző osztály-felosztások esetén létrejött igazságmátrixokat. Ezek optimális esetben egységmátrixok lennének (valamilyen skálázással). Azt láthatjuk, hogy mindhárom esetben jó pontosságot ért el a modell, nem látszanak kiugró egyensúlytalanságok. Külön kiemelném, hogy a 4 osztály esetében a modell milyen pontossággal különbözteti meg a sportolók, HCM-esek és egyéb hypertrófiások képeit, annak ellenére, hogy mindhárom osztály esetében a szívfal megvastagszik, tehát pusztán erre nem hagyatkozhat.
 
 ![Igazságmátrix 2 diagnózis-típus esetén](https://drive.google.com/uc?id=1qe7KHs09CTciAe9_BcAHO8X_6JCEm2jI)
 ![Igazságmátrix 3 diagnózis-típus esetén](https://drive.google.com/uc?id=17YijzBWUhsl7yXufsc2egqRe4XVTTSkI)

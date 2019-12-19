@@ -28,3 +28,5 @@ A DICOM fájlok meta tag-jeinek kényelmes, szűrhető vizsgálatához segédosz
 
 ### Tanítás számos paraméter vizsgálatával
 ## Eredmények
+![MRI típusok](./charts/MRI_modes.png)
+![Tesztelt architektúrák](./charts/Different_models.png)

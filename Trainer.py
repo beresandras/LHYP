@@ -472,7 +472,7 @@ def train_model(model, model_info, epochs, batch_size, gpu_index, seed):
     model_info['train_time']= (time.time() - start_time) / (epochs * batch_size)
 
     with open(results_path, 'wb') as out_file:
-        pickle.dump(model_infos, out_file)
+        pickle.dump(model_info, out_file)
 
 if __name__=='__main__':
     epochs = 2

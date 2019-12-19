@@ -28,6 +28,11 @@ A DICOM fájlok meta tag-jeinek kényelmes, szűrhető vizsgálatához segédosz
 
 ### Tanítás számos paraméter vizsgálatával
 ## Eredmények
-![MRI típusok](https://drive.google.com/uc?id=1J_I68Emaovwy_hPA4spbtwKia4eONsXK)
-![Tesztelt architektúrák](https://drive.google.com/uc?id=1PH1IXDVlzogiw6ux3fsFJiQrRe6SQdpR)
-![Diagnózis-típusok mennyisége](https://drive.google.com/uc?id=1rwVJWd8SELf58aX9uo-neXOUipA5niVD)
+![A különböző MRI típusok eredményei](https://drive.google.com/uc?id=1J_I68Emaovwy_hPA4spbtwKia4eONsXK)
+![Tesztelt architektúrák eredményei](https://drive.google.com/uc?id=1PH1IXDVlzogiw6ux3fsFJiQrRe6SQdpR)
+![Diagnózis-típusok darabszámának hatása](https://drive.google.com/uc?id=1rwVJWd8SELf58aX9uo-neXOUipA5niVD)
+![Augmentáció erősségének hatása](https://drive.google.com/uc?id=1NX08cheZ7MQrIpaSaYflzWx03xZ3yA8F)
+![Transzfer tanítás hatása](https://drive.google.com/uc?id=1S0lVBqgr3I_aTN2-XE7Xg9BdzVn-fd0Q)
+![Igazságmátrix 2 diagnózis-típus esetén](https://drive.google.com/uc?id=1qe7KHs09CTciAe9_BcAHO8X_6JCEm2jI)
+![Igazságmátrix 3 diagnózis-típus esetén](https://drive.google.com/uc?id=17YijzBWUhsl7yXufsc2egqRe4XVTTSkI)
+![Igazságmátrix 4 diagnózis-típus esetén](https://drive.google.com/uc?id=12JoJ7IEuWFYxznqRgAjjbMk7G54ZbVyc)

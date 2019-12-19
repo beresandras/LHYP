@@ -44,14 +44,47 @@ Elkészítettem egy adatbeolvasó és -feldolgozó programot (**data_reader.py**
 - **LALE**: Az itt található képeknek sorrendben pontosan a középső harmadát mentettem el.
 
 ### Tanítás számos paraméter vizsgálatával
-Az elkészült előfeldolgozás után tanításokat végeztem az adatokon modellek, technikák, és MRI-típusok széles skáláját felhasználva. Ennek célja az volt, hogy felmérjem, melyik irányokba érdemes a leginkább elindulni, mik azok, amik jól működnek, mik azok amik nem. Kifejezetten nem egyetlen módszer maximális optimalizálása volt a cél, hanem minél több felderítése. A tanítások eredményeit és a tanulságokat a következő fejezetben taglalom.
+Az elkészült előfeldolgozás után tanításokat végeztem (**Trainer.py**) az adatokon, modellek, technikák, és MRI-típusok széles skáláját felhasználva. Ennek célja az volt, hogy felmérjem, melyik irányokba érdemes a leginkább elindulni, mik azok, amik jól működnek, mik azok, amik nem. Kifejezetten nem egyetlen módszer maximális optimalizálása volt a cél, hanem minél több felderítése. A tanítások eredményeit és a tanulságokat a következő fejezetben taglalom.
 
 ## Eredmények
+A referencia módszerem, melyhez képest a egyes paramétereket változtattam, a következő volt:
+ResNet18 modell, SA MRI típusú képeken, 3 diagnózis-osztályon, 32-es batch mérettel, közepes adataugmentációval 100 epochig tanult. Ezeknek a paramétereknek egyikét változtattam a későbbiekben.
+
+### A különböző MRI típusok eredményei
+Teszteltem a fent leírt modellt az összes lehetséges MRI típuson. A grafikon alapján elmondható, hogy általánosságban az SA típusú képeken szignifikánsan jobban teljesít az algoritmus, míg az LE típusú képek mindkét fő MRI típus esetében enyhe eredményjavuláshoz (vagyis loss-csökkenéshez vezettek).
 ![A különböző MRI típusok eredményei](https://drive.google.com/uc?id=1J_I68Emaovwy_hPA4spbtwKia4eONsXK)
+
+### Tesztelt architektúrák eredményei
+4 különböző modellen végeztem tanítást: VGG11 (batch norm), MobileNet v2, ResNet18, SqueezeNet 1.0. A modellek kiválasztásakor ügyeltem arra, hogy minél kevesebb paramétert tartalmazzanak, hiszen viszonylag kevés adatunk van, és ügyelni kell arra, hogy a túltanítást elkerüljük. Az eredmények alapján elmondható, hogy általánosságban a VGG modell vezetett a legnagyobb pontossághoz, azonban ha a tanítás idejét is figyelembe vesszük, a ResNet mindkét téren jól teljesített, és egy jó kompromisszumnak tűnik a tanítási idő és pontosság között.
 ![Tesztelt architektúrák eredményei](https://drive.google.com/uc?id=1PH1IXDVlzogiw6ux3fsFJiQrRe6SQdpR)
+
+### Diagnózis-típusok darabszámának hatása
+Az osztályok számának hatása egy érdekes eredményt mutat: a tanítás nagyobb pontosságra vezetett 4 osztály, mint 3 osztály esetén. Tehát a jövőbeli tanítások esetén ezzel érdemes lehet kísérletezni.
 ![Diagnózis-típusok darabszámának hatása](https://drive.google.com/uc?id=1rwVJWd8SELf58aX9uo-neXOUipA5niVD)
+
+### Augmentáció erősségének hatása
+Különböző augmentációkat is kipróbáltam:
+- *minimális*: 2x nagyítás, 224x224 CenterCrop, semmi véletlenszerűség
+- *normális*: 1.8-2.2x nagyítás, +-0.1x képszélességnyi eltolás, és +-20 foknyi forgatás
+- *maximális*: 1.7-2.3x nagyítás, +-0.15x képszélességnyi eltolás, +-30 foknyi forgatás és ColorJitter 0.3-as brightness-el
+
+Rövid- és közép távon a normális adataugmentáció mutatta a legjobb eredményeket, azonban hosszú távon a maximális adataugmentáció esetén pontosabbá vált a modell, tehát a jövőben egy jelentősebb adataugmentációt érdemes lehet megfontolni.
 ![Augmentáció erősségének hatása](https://drive.google.com/uc?id=1NX08cheZ7MQrIpaSaYflzWx03xZ3yA8F)
+
+### Transzfer tanítás hatása
+Kísérleteztem transzfertanítással is. Itt a három tesztelt technika a következő:
+- *retrain*: hagyományos tanítás, véletlen inicializálással
+- *finetune*: ImageNet-en betanított súlyokkal betöltött modell tanítása az új adatokon
+- *transfer*: ImageNet-en betanított súlyokkal betöltött modell utolsó, klasszifikáló rétegének tanítása az új adatokon
+
+A *transfer* technika kezdettől fogva nem vezetett nagy pontosságra, ami az ImageNet és a mi adathalmazunk különbözőségét megfigyelve nem is meglepő. Ami meglepő volt azonban, az viszont az, hogy a *finetune* modell már a tanítás elején nagyon jó pontosságra volt képes, és még hosszú távon is enyhén jobb eredményre volt képes, mint a hagyományosan tanított modell.
 ![Transzfer tanítás hatása](https://drive.google.com/uc?id=1S0lVBqgr3I_aTN2-XE7Xg9BdzVn-fd0Q)
+
+### Igazságmátrix 2, 3, 4 diagnózis-típus esetén
+Végezetül pedig ábrázoltam a különböző osztály-felosztások esetén létrejött igazságmátrixokat. Ezek optimális esetben egységmátrixok lennének (valamilyen skálázással). Azt láthatjuk, hogy mindhárom esetben jó pontosságot ért el a modell, nem látszanak kiugró egyensúlytalanságok. Külön kiemelném, hogy a 4 osztály esetében a modell milyen pontossággal különbözteti meg a sportolók, HCM-esek és egyéb hypertrófiások képeit, annak ellenére, hogy mindhárom osztály esetében a szív megvastagszik, tehát pusztán erre nem hagyatkozhat.
 ![Igazságmátrix 2 diagnózis-típus esetén](https://drive.google.com/uc?id=1qe7KHs09CTciAe9_BcAHO8X_6JCEm2jI)
 ![Igazságmátrix 3 diagnózis-típus esetén](https://drive.google.com/uc?id=17YijzBWUhsl7yXufsc2egqRe4XVTTSkI)
 ![Igazságmátrix 4 diagnózis-típus esetén](https://drive.google.com/uc?id=12JoJ7IEuWFYxznqRgAjjbMk7G54ZbVyc)
+
+
+*Béres András*
